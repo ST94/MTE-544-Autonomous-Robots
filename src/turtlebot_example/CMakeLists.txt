@@ -51,6 +51,7 @@ find_package(catkin REQUIRED COMPONENTS
 #   FILES
 #   Message1.msg
 #   Message2.msg
+#   Message3.msg
 # )
 
 ## Generate services in the 'srv' folder
@@ -58,6 +59,7 @@ find_package(catkin REQUIRED COMPONENTS
 #   FILES
 #   Service1.srv
 #   Service2.srv
+#   Service3.srv
 # )
 
 ## Generate actions in the 'action' folder
@@ -65,6 +67,7 @@ find_package(catkin REQUIRED COMPONENTS
 #   FILES
 #   Action1.action
 #   Action2.action
+#   Action3.action
 # )
 
 ## Generate added messages and services with any dependencies listed here
@@ -98,6 +101,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  link_directories(/home/ambrose)
 )
 
 ## Declare a cpp library
@@ -108,6 +112,7 @@ include_directories(
 ## Declare a cpp executable
  add_executable(turtlebot_example_node src/turtlebot_example_node.cpp)
  add_executable(square_movement_node src/square_movement_node.cpp)
+ add_executable(lab_2_node src/turtlebot_example_node_lab2.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -118,6 +123,9 @@ include_directories(
    ${catkin_LIBRARIES}
  )
  target_link_libraries(square_movement_node
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(lab_2_node
    ${catkin_LIBRARIES}
  )
  

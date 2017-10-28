@@ -165,6 +165,8 @@ int main(int argc, char **argv)
     	loop_rate.sleep(); //Maintain the loop rate
     	ros::spinOnce();   //Check for new messages
     
+    	ROS_INFO("this is running properly");
+    	
     	//Main loop code goes here:
     	vel = pose_class.getVel();
     	velocity_publisher.publish(vel); // Publish the command velocity

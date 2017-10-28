@@ -6,5 +6,5 @@ CXX_FLAGS =
 
 CXX_DEFINES = -DROSCONSOLE_BACKEND_LOG4CXX -DROS_BUILD_SHARED_LIBS=1 -DROS_PACKAGE_NAME=\"turtlebot_example\"
 
-CXX_INCLUDES = -I/opt/ros/kinetic/include -I/opt/ros/kinetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp 
+CXX_INCLUDES = -I/opt/ros/kinetic/include -I/opt/ros/kinetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp -I/home/ambrose/catkin_ws/src/turtlebot_example/link_directories -I"/home/ambrose/catkin_ws/src/turtlebot_example/(" -I/home/ambrose -I"/home/ambrose/catkin_ws/src/turtlebot_example/)" 
 

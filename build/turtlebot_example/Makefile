@@ -166,6 +166,21 @@ depend:
 .PHONY : depend
 
 # Convenience name for target.
+turtlebot_example/CMakeFiles/lab_2_node.dir/rule:
+	cd /home/ambrose/catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 turtlebot_example/CMakeFiles/lab_2_node.dir/rule
+.PHONY : turtlebot_example/CMakeFiles/lab_2_node.dir/rule
+
+# Convenience name for target.
+lab_2_node: turtlebot_example/CMakeFiles/lab_2_node.dir/rule
+
+.PHONY : lab_2_node
+
+# fast build rule for target.
+lab_2_node/fast:
+	cd /home/ambrose/catkin_ws/build && $(MAKE) -f turtlebot_example/CMakeFiles/lab_2_node.dir/build.make turtlebot_example/CMakeFiles/lab_2_node.dir/build
+.PHONY : lab_2_node/fast
+
+# Convenience name for target.
 turtlebot_example/CMakeFiles/square_movement_node.dir/rule:
 	cd /home/ambrose/catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 turtlebot_example/CMakeFiles/square_movement_node.dir/rule
 .PHONY : turtlebot_example/CMakeFiles/square_movement_node.dir/rule
@@ -924,6 +939,33 @@ src/turtlebot_example_node.cpp.s:
 	cd /home/ambrose/catkin_ws/build && $(MAKE) -f turtlebot_example/CMakeFiles/turtlebot_example_node.dir/build.make turtlebot_example/CMakeFiles/turtlebot_example_node.dir/src/turtlebot_example_node.cpp.s
 .PHONY : src/turtlebot_example_node.cpp.s
 
+src/turtlebot_example_node_lab2.o: src/turtlebot_example_node_lab2.cpp.o
+
+.PHONY : src/turtlebot_example_node_lab2.o
+
+# target to build an object file
+src/turtlebot_example_node_lab2.cpp.o:
+	cd /home/ambrose/catkin_ws/build && $(MAKE) -f turtlebot_example/CMakeFiles/lab_2_node.dir/build.make turtlebot_example/CMakeFiles/lab_2_node.dir/src/turtlebot_example_node_lab2.cpp.o
+.PHONY : src/turtlebot_example_node_lab2.cpp.o
+
+src/turtlebot_example_node_lab2.i: src/turtlebot_example_node_lab2.cpp.i
+
+.PHONY : src/turtlebot_example_node_lab2.i
+
+# target to preprocess a source file
+src/turtlebot_example_node_lab2.cpp.i:
+	cd /home/ambrose/catkin_ws/build && $(MAKE) -f turtlebot_example/CMakeFiles/lab_2_node.dir/build.make turtlebot_example/CMakeFiles/lab_2_node.dir/src/turtlebot_example_node_lab2.cpp.i
+.PHONY : src/turtlebot_example_node_lab2.cpp.i
+
+src/turtlebot_example_node_lab2.s: src/turtlebot_example_node_lab2.cpp.s
+
+.PHONY : src/turtlebot_example_node_lab2.s
+
+# target to generate assembly for a file
+src/turtlebot_example_node_lab2.cpp.s:
+	cd /home/ambrose/catkin_ws/build && $(MAKE) -f turtlebot_example/CMakeFiles/lab_2_node.dir/build.make turtlebot_example/CMakeFiles/lab_2_node.dir/src/turtlebot_example_node_lab2.cpp.s
+.PHONY : src/turtlebot_example_node_lab2.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -933,6 +975,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... install/local"
 	@echo "... install/strip"
+	@echo "... lab_2_node"
 	@echo "... square_movement_node"
 	@echo "... sensor_msgs_generate_messages_cpp"
 	@echo "... rosgraph_msgs_generate_messages_lisp"
@@ -990,6 +1033,9 @@ help:
 	@echo "... src/turtlebot_example_node.o"
 	@echo "... src/turtlebot_example_node.i"
 	@echo "... src/turtlebot_example_node.s"
+	@echo "... src/turtlebot_example_node_lab2.o"
+	@echo "... src/turtlebot_example_node_lab2.i"
+	@echo "... src/turtlebot_example_node_lab2.s"
 .PHONY : help
 
 

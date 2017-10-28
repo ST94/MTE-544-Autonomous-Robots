@@ -19,6 +19,10 @@ set(CMAKE_TARGET_DEFINITIONS_CXX
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/opt/ros/kinetic/include"
   "/opt/ros/kinetic/share/xmlrpcpp/cmake/../../../include/xmlrpcpp"
+  "/home/ambrose/catkin_ws/src/turtlebot_example/link_directories"
+  "/home/ambrose/catkin_ws/src/turtlebot_example/("
+  "/home/ambrose"
+  "/home/ambrose/catkin_ws/src/turtlebot_example/)"
   )
 
 # Targets to which this target links.

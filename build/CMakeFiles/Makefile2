@@ -306,12 +306,14 @@ clean: gtest/CMakeFiles/gtest_main.dir/clean
 # Directory level rules for directory turtlebot_example
 
 # Convenience name for "all" pass in the directory.
+turtlebot_example/all: turtlebot_example/CMakeFiles/lab_2_node.dir/all
 turtlebot_example/all: turtlebot_example/CMakeFiles/square_movement_node.dir/all
 turtlebot_example/all: turtlebot_example/CMakeFiles/turtlebot_example_node.dir/all
 
 .PHONY : turtlebot_example/all
 
 # Convenience name for "clean" pass in the directory.
+turtlebot_example/clean: turtlebot_example/CMakeFiles/lab_2_node.dir/clean
 turtlebot_example/clean: turtlebot_example/CMakeFiles/square_movement_node.dir/clean
 turtlebot_example/clean: turtlebot_example/CMakeFiles/sensor_msgs_generate_messages_cpp.dir/clean
 turtlebot_example/clean: turtlebot_example/CMakeFiles/rosgraph_msgs_generate_messages_lisp.dir/clean
@@ -368,13 +370,50 @@ turtlebot_example/preinstall:
 .PHONY : turtlebot_example/preinstall
 
 #=============================================================================
+# Target rules for target turtlebot_example/CMakeFiles/lab_2_node.dir
+
+# All Build rule for target.
+turtlebot_example/CMakeFiles/lab_2_node.dir/all:
+	$(MAKE) -f turtlebot_example/CMakeFiles/lab_2_node.dir/build.make turtlebot_example/CMakeFiles/lab_2_node.dir/depend
+	$(MAKE) -f turtlebot_example/CMakeFiles/lab_2_node.dir/build.make turtlebot_example/CMakeFiles/lab_2_node.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ambrose/catkin_ws/build/CMakeFiles --progress-num=5,6 "Built target lab_2_node"
+.PHONY : turtlebot_example/CMakeFiles/lab_2_node.dir/all
+
+# Include target in all.
+all: turtlebot_example/CMakeFiles/lab_2_node.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+turtlebot_example/CMakeFiles/lab_2_node.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ambrose/catkin_ws/build/CMakeFiles 2
+	$(MAKE) -f CMakeFiles/Makefile2 turtlebot_example/CMakeFiles/lab_2_node.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/ambrose/catkin_ws/build/CMakeFiles 0
+.PHONY : turtlebot_example/CMakeFiles/lab_2_node.dir/rule
+
+# Convenience name for target.
+lab_2_node: turtlebot_example/CMakeFiles/lab_2_node.dir/rule
+
+.PHONY : lab_2_node
+
+# clean rule for target.
+turtlebot_example/CMakeFiles/lab_2_node.dir/clean:
+	$(MAKE) -f turtlebot_example/CMakeFiles/lab_2_node.dir/build.make turtlebot_example/CMakeFiles/lab_2_node.dir/clean
+.PHONY : turtlebot_example/CMakeFiles/lab_2_node.dir/clean
+
+# clean rule for target.
+clean: turtlebot_example/CMakeFiles/lab_2_node.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
 # Target rules for target turtlebot_example/CMakeFiles/square_movement_node.dir
 
 # All Build rule for target.
 turtlebot_example/CMakeFiles/square_movement_node.dir/all:
 	$(MAKE) -f turtlebot_example/CMakeFiles/square_movement_node.dir/build.make turtlebot_example/CMakeFiles/square_movement_node.dir/depend
 	$(MAKE) -f turtlebot_example/CMakeFiles/square_movement_node.dir/build.make turtlebot_example/CMakeFiles/square_movement_node.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ambrose/catkin_ws/build/CMakeFiles --progress-num=5,6 "Built target square_movement_node"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ambrose/catkin_ws/build/CMakeFiles --progress-num=7,8 "Built target square_movement_node"
 .PHONY : turtlebot_example/CMakeFiles/square_movement_node.dir/all
 
 # Include target in all.
@@ -1851,7 +1890,7 @@ clean: turtlebot_example/CMakeFiles/tf_generate_messages_cpp.dir/clean
 turtlebot_example/CMakeFiles/turtlebot_example_node.dir/all:
 	$(MAKE) -f turtlebot_example/CMakeFiles/turtlebot_example_node.dir/build.make turtlebot_example/CMakeFiles/turtlebot_example_node.dir/depend
 	$(MAKE) -f turtlebot_example/CMakeFiles/turtlebot_example_node.dir/build.make turtlebot_example/CMakeFiles/turtlebot_example_node.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ambrose/catkin_ws/build/CMakeFiles --progress-num=7,8 "Built target turtlebot_example_node"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/ambrose/catkin_ws/build/CMakeFiles --progress-num=9,10 "Built target turtlebot_example_node"
 .PHONY : turtlebot_example/CMakeFiles/turtlebot_example_node.dir/all
 
 # Include target in all.

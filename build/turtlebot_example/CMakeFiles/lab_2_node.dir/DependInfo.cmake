@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/ambrose/catkin_ws/src/turtlebot_example/src/turtlebot_example_node.cpp" "/home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/turtlebot_example_node.dir/src/turtlebot_example_node.cpp.o"
+  "/home/ambrose/catkin_ws/src/turtlebot_example/src/turtlebot_example_node_lab2.cpp" "/home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/lab_2_node.dir/src/turtlebot_example_node_lab2.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

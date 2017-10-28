@@ -257,6 +257,19 @@ gtest_main/fast:
 .PHONY : gtest_main/fast
 
 #=============================================================================
+# Target rules for targets named lab_2_node
+
+# Build rule for target.
+lab_2_node: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 lab_2_node
+.PHONY : lab_2_node
+
+# fast build rule for target.
+lab_2_node/fast:
+	$(MAKE) -f turtlebot_example/CMakeFiles/lab_2_node.dir/build.make turtlebot_example/CMakeFiles/lab_2_node.dir/build
+.PHONY : lab_2_node/fast
+
+#=============================================================================
 # Target rules for targets named square_movement_node
 
 # Build rule for target.
@@ -887,6 +900,7 @@ help:
 	@echo "... test"
 	@echo "... gtest"
 	@echo "... gtest_main"
+	@echo "... lab_2_node"
 	@echo "... square_movement_node"
 	@echo "... sensor_msgs_generate_messages_cpp"
 	@echo "... rosgraph_msgs_generate_messages_lisp"

@@ -22,6 +22,7 @@
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/edit_cache.dir
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/install/local.dir
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/install/strip.dir
+/home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/lab_2_node.dir
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/square_movement_node.dir
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/sensor_msgs_generate_messages_cpp.dir
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/rosgraph_msgs_generate_messages_lisp.dir
