@@ -24,12 +24,11 @@
 #include <eigen/Eigen/Dense>
 
 ros::Publisher pose_publisher;
-ros::Publisher marker_pub;
 
 using namespace Eigen;
 using namespace std;
 
-const int NUM_PARTICLES = 1000;
+const int NUM_PARTICLES = 8;
 const int UPDATE_RATE = 1;
 #define PI 3.14159265
 
@@ -47,8 +46,7 @@ MatrixXf variance(3,3);
 MatrixXf measurement(3,1);
 MatrixXf velocity(3,1);
 
-vector<double> weights = vector<double>(NUM_PARTICLES);
-
+double weights [NUM_PARTICLES];
 
 short sgn(int x) { return x >= 0 ? 1 : -1; }
 
@@ -58,18 +56,15 @@ void generate_initial_samples(int num_particles)
     int j;
     int position = 0;
     ROS_INFO("generating initial samples");
-    for (i = 0; i < sqrt(num_particles); i++) {
-        for (j = 0; j < sqrt(num_particles); j++) {
+    for (i = 0; i < NUM_PARTICLES; i++) {
             double random = (double)rand()/ RAND_MAX;
             MatrixXf estimate(3,1);
-            estimate(0,0) = - 2.5 + 5*i/(sqrt(num_particles)-1);
-            estimate(1,0) = - 2.5 + 5*j/(sqrt(num_particles)-1);
-            estimate(2,0) = random * 2 * PI;
-            ROS_INFO("X: [%f], Y: [%f], Yaw: [%f]", estimate(0,0), estimate(1,0), estimate(2,0));
-            ROS_INFO("RANDOM: [%f]", random);
+            estimate(0,0) = - 0.5 + random;
+            estimate(1,0) = - 0.5 + random;
+            estimate(2,0) = - PI + random * 2 * PI;
+            //ROS_INFO("X: [%f], Y: [%f], Yaw: [%f]", estimate(0,0), estimate(1,0), estimate(2,0));
             estimates[position] = estimate;
             position++;
-        }
     }
     ROS_INFO("inital samples generated");
 }
@@ -95,42 +90,73 @@ double normpdf(Matrix<float, 3, 1> measurement, Matrix<float, 3, 1> expected, Ma
     //double pdf = exp(-0.5 *difference.transpose() * variance.inverse() * difference)/(sqrt(2 * PI * variance.determinant()));
     double pdf = exp(-0.5 * difference.transpose() * variance.inverse() * difference)/(pow(2 * PI, 1.5) * pow(variance.determinant(), 0.5));
 
-    ROS_INFO("difference: [%f, %f, %f]", difference(0,0), difference(1, 0), difference(2,0));
+    //ROS_INFO("difference: [%f, %f, %f]", difference(0,0), difference(1, 0), difference(2,0));
     //ROS_INFO("numerator: [%f]", difference.transpose() * variance.inverse() * difference);
     // ROS_INFO("denominator: [%f]", (pow(2 * PI, 1.5) * pow(variance.determinant(), 0.5)));
-    ROS_INFO("probability: [%f]", pdf);
+    //ROS_INFO("probability: [%f]", pdf);
     return pdf;
+}
+
+double rad_wrap(double angle)
+{
+    //ROS_INFO("angle %f", angle);
+    while (angle < -PI || angle > PI)
+    {
+        if (angle < 0)
+            {
+                angle = angle + (2*PI);
+            }
+        if (angle > 0)
+            {
+                angle = angle -(2*PI);
+            }
+    } 
+    return angle;
 }
 
 void update_predicted() 
 {
     int particle;
     for(particle = 0;particle<NUM_PARTICLES;particle++) {
-        predicted[particle] = estimates[particle] + (1/UPDATE_RATE)*rotational_matrix*velocity;
-        weights[particle] = normpdf(measurement, predicted[particle], variance);
+        MatrixXf updated_position(3,1);
+        predicted[particle] = estimates[particle] + 4*rotational_matrix*velocity;
+        predicted[particle](2,0) = rad_wrap(predicted[particle](2,0));
+        weights[particle] = normpdf(measurement, predicted[particle],variance);
         //ROS_INFO("Predictions: X: [%f], Y: [%f], Yaw: [%f]", predicted[particle](0,0), predicted[particle](1,0), predicted[particle](2,0));
+        //ROS_INFO("probability: [%f]", weights[particle]);
     }
+    // ROS_INFO("Estimate: X: [%f], Y: [%f], Yaw: [%f]", estimates[1](0,0), estimates[1](1,0), estimates[1](2,0));
+    // ROS_INFO("Predictions: X: [%f], Y: [%f], Yaw: [%f]", predicted[1](0,0), predicted[1](1,0), predicted[1](2,0));
+    // ROS_INFO("probability: [%f]", weights[1]);
 }
 
 void cum_sum_weights(){
     double max_weight;
-    partial_sum(weights.begin(), weights.end(), weights.begin());
-    max_weight = weights[NUM_PARTICLES];
 
-    int i;
-    for(i = 0; i<NUM_PARTICLES ; i++){
+    for(int i = 1; i < NUM_PARTICLES; i++) {
+        weights[i] = weights[i]+weights[i-1];
+    }
+
+    max_weight = weights[(NUM_PARTICLES-1)];
+
+    for(int i = 0; i<NUM_PARTICLES ; i++){
         weights[i] = weights[i] / max_weight;
     }
 }
 
 void resample() {
     int i;
-    int j;
     for(i = 0; i<NUM_PARTICLES ; i++) {
         double random = (double)rand()/ RAND_MAX;
-        vector<double>::iterator iterator = lower_bound(weights.begin(), weights.end(), random);
-        j = iterator - weights.begin();
+        int j = 0;
+        while (weights[j] < random)
+        {
+            j++;
+        }
+        //ROS_INFO("random: %i", j);
         estimates[i] = predicted[j];
+        ROS_INFO("Predictions: X: [%f], Y: [%f], Yaw: [%f]", estimates[i](0,0), estimates[i](1,0), estimates[i](2,0));
+        //ROS_INFO("Weight: [%f]", weights[j]);
     }
 
 }
@@ -139,7 +165,7 @@ void odometry_callback(const nav_msgs::Odometry msg) {
     velocity(0,0) = msg.twist.twist.linear.x;
     velocity(1,0) = msg.twist.twist.linear.y;
     velocity(2,0) = msg.twist.twist.angular.z;
-    ROS_INFO("Velocity: X: [%f], Y: [%f], Yaw: [%f]", velocity(0,0), velocity(1,0), velocity(2,0));
+    ROS_WARN("Velocity: X: [%f], Y: [%f], Yaw: [%f]", velocity(0,0), velocity(1,0), velocity(2,0));
 };
 
 //Callback function for the Position topic (SIMULATION)
@@ -150,39 +176,67 @@ void pose_callback(const gazebo_msgs::ModelStates& msg)
         if(msg.name[i] == "mobile_base") 
         break;
     }
-
     measurement(0,0) = msg.pose[i].position.x;
     measurement(1,0) = msg.pose[i].position.y;
     measurement(2,0) = tf::getYaw(msg.pose[i].orientation);
-    ROS_INFO("Measurements: X: [%f], Y: [%f], Yaw: [%f]", measurement(0,0), measurement(1,0), measurement(2,0));
+    set_rotational_matrix();
+    ROS_WARN("Measurements: X: [%f], Y: [%f], Yaw: [%f]", measurement(0,0), measurement(1,0), measurement(2,0));
 }
 
-visualization_msgs::MarkerArray build_particleset_viz(MatrixXf particles[]) {
-    visualization_msgs::MarkerArray msg;
-    msg.markers = std::vector<visualization_msgs::Marker>(NUM_PARTICLES);
+visualization_msgs::MarkerArray build_rvizparticles() {
+    visualization_msgs::MarkerArray markers;
+    markers.markers = std::vector<visualization_msgs::Marker>(NUM_PARTICLES);
     for (int i = 0; i < NUM_PARTICLES; i++) {
-        visualization_msgs::Marker marker = msg.markers[i];
-        MatrixXf particle = particles[i];
+       visualization_msgs::Marker marker;
         
-        marker.id = 0;
-        marker.header.frame_id = "base_link";
-        marker.header.stamp = ros::Time();
-        marker.type = visualization_msgs::Marker::ARROW;
-        marker.color.a = 1.0; // Don't forget to set the alpha!
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-        marker.color.b = 0.0;
-        
-        marker.pose.position.x =  particle(0, 0);
-        marker.pose.position.y = particle(1,0);
-        marker.pose.orientation.z =  particle(2,0);
+       marker.header.frame_id = "base_link";
+       marker.header.stamp = ros::Time();
+       // marker.ns = "my_namespace";
+       marker.id = i;
+       marker.type = visualization_msgs::Marker::CUBE;
+       marker.action = visualization_msgs::Marker::ADD;
+       marker.pose.position.x = estimates[i](0,0);
+       marker.pose.position.y = estimates[i](1,0);
+       marker.pose.position.z = 0;
+       // marker.pose.orientation.z = particle(2,0);
+       marker.scale.x = 0.1;
+       marker.scale.y = 0.1;
+       marker.scale.z = 0.1;
+       marker.color.a = 1.0; // Don't forget to set the alpha!
+       marker.color.r = 1.0;
+       marker.color.g = 0.0;
+       marker.color.b = 0.0;
+       marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
+
+       markers.markers[i] = marker;
         //ROS_INFO("X: [%f], Y: [%f], Yaw: [%f]", particle(0,0), particle(1,0), particle(2,0));     
     }
-    
-    return msg;
+    return markers;
 }
 
-
+visualization_msgs::Marker build_marker() {
+    visualization_msgs::Marker marker;
+       marker.header.frame_id = "base_link";
+       marker.header.stamp = ros::Time();
+       // marker.ns = "my_namespace";
+       marker.id = 0;
+       marker.type = visualization_msgs::Marker::CUBE;
+       marker.action = visualization_msgs::Marker::ADD;
+       marker.pose.position.x = measurement(0,0);
+       marker.pose.position.y = measurement(1,0);
+       marker.pose.position.z = 0;
+       // marker.pose.orientation.z = measurement(2,0);
+       marker.scale.x = 0.1;
+       marker.scale.y = 0.1;
+       marker.scale.z = 0.1;
+       marker.color.a = 1.0; // Don't forget to set the alpha!
+       marker.color.r = 0.0;
+       marker.color.g = 1.0;
+       marker.color.b = 0.0;
+      //only if using a MESH_RESOURCE marker type:
+       marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
+   return marker;
+}
 
 //Callback function for the Position topic (LIVE)
 /*
@@ -258,8 +312,8 @@ int main(int argc, char **argv)
     //Setup topics to Publish from this node
     ros::Publisher velocity_publisher = n.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
     pose_publisher = n.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
-    marker_pub = n.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 0);
-    
+    ros::Publisher particles_publisher = n.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1);
+    ros::Publisher vis_pub = n.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );   
 
     //Velocity control variable
     geometry_msgs::Twist vel;
@@ -275,7 +329,7 @@ int main(int argc, char **argv)
     variance(1,2) = 0;
     variance(2,0) = 0;
     variance(2,1) = 0;
-    variance(2,2) = 1e-10;
+    variance(2,2) = 0.001;
 
     generate_initial_samples(NUM_PARTICLES);
 
@@ -289,15 +343,13 @@ int main(int argc, char **argv)
         vel.linear.x = 0.1; // set linear speed
         vel.angular.z = 0.3; // set angular speed
 
-
-
-        set_rotational_matrix();
         update_predicted();
         cum_sum_weights();
         resample();        
 
         velocity_publisher.publish(vel); // Publish the command velocity
-        marker_pub.publish(build_particleset_viz(estimates));
+        particles_publisher.publish(build_rvizparticles());
+        vis_pub.publish(build_marker());
 
     }
     return 0;
