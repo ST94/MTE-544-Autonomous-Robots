@@ -28,8 +28,8 @@ ros::Publisher pose_publisher;
 using namespace Eigen;
 using namespace std;
 
-const int NUM_PARTICLES = 8;
-const int UPDATE_RATE = 1;
+const int NUM_PARTICLES = 16;
+const int UPDATE_RATE = 3;
 #define PI 3.14159265
 
 MatrixXf rotational_matrix(3,3);
@@ -119,9 +119,9 @@ void update_predicted()
     int particle;
     for(particle = 0;particle<NUM_PARTICLES;particle++) {
         MatrixXf updated_position(3,1);
-        predicted[particle] = estimates[particle] + 4*rotational_matrix*velocity;
+        predicted[particle] = estimates[particle] + (1.0/UPDATE_RATE)*rotational_matrix*velocity;
         predicted[particle](2,0) = rad_wrap(predicted[particle](2,0));
-        weights[particle] = normpdf(measurement, predicted[particle],variance);
+        weights[particle] = normpdf(measurement, predicted[particle], variance);
         //ROS_INFO("Predictions: X: [%f], Y: [%f], Yaw: [%f]", predicted[particle](0,0), predicted[particle](1,0), predicted[particle](2,0));
         //ROS_INFO("probability: [%f]", weights[particle]);
     }
