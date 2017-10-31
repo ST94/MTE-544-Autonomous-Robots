@@ -29,7 +29,7 @@ using namespace Eigen;
 using namespace std;
 
 const int NUM_PARTICLES = 16;
-const int UPDATE_RATE = 3;
+const int UPDATE_RATE = 2;
 #define PI 3.14159265
 
 MatrixXf rotational_matrix(3,3);
@@ -49,6 +49,12 @@ MatrixXf velocity(3,1);
 double weights [NUM_PARTICLES];
 
 short sgn(int x) { return x >= 0 ? 1 : -1; }
+
+double randomGenerate()
+{
+	double random = (double)rand()/ RAND_MAX;
+	return -1.0 + 2.0 * random;
+}
 
 void generate_initial_samples(int num_particles) 
 {
@@ -118,8 +124,13 @@ void update_predicted()
 {
     int particle;
     for(particle = 0;particle<NUM_PARTICLES;particle++) {
+
         MatrixXf updated_position(3,1);
-        predicted[particle] = estimates[particle] + (1.0/UPDATE_RATE)*rotational_matrix*velocity;
+        MatrixXf randomMatrix(3,1);
+        randomMatrix(0,0) = randomGenerate();
+        randomMatrix(1,0) = randomGenerate();
+        randomMatrix(2,0) = randomGenerate();
+        predicted[particle] = estimates[particle] + (1.0/UPDATE_RATE)*rotational_matrix*velocity + variance *randomMatrix;
         predicted[particle](2,0) = rad_wrap(predicted[particle](2,0));
         weights[particle] = normpdf(measurement, predicted[particle], variance);
         //ROS_INFO("Predictions: X: [%f], Y: [%f], Yaw: [%f]", predicted[particle](0,0), predicted[particle](1,0), predicted[particle](2,0));
@@ -147,7 +158,7 @@ void cum_sum_weights(){
 void resample() {
     int i;
     for(i = 0; i<NUM_PARTICLES ; i++) {
-        double random = (double)rand()/ RAND_MAX;
+        double random = randomGenerate();
         int j = 0;
         while (weights[j] < random)
         {
@@ -155,17 +166,17 @@ void resample() {
         }
         //ROS_INFO("random: %i", j);
         estimates[i] = predicted[j];
-        ROS_INFO("Predictions: X: [%f], Y: [%f], Yaw: [%f]", estimates[i](0,0), estimates[i](1,0), estimates[i](2,0));
+        // ROS_INFO("Predictions: X: [%f], Y: [%f], Yaw: [%f]", estimates[i](0,0), estimates[i](1,0), estimates[i](2,0));
         //ROS_INFO("Weight: [%f]", weights[j]);
     }
 
 }
 
 void odometry_callback(const nav_msgs::Odometry msg) {
-    velocity(0,0) = msg.twist.twist.linear.x;
-    velocity(1,0) = msg.twist.twist.linear.y;
-    velocity(2,0) = msg.twist.twist.angular.z;
-    ROS_WARN("Velocity: X: [%f], Y: [%f], Yaw: [%f]", velocity(0,0), velocity(1,0), velocity(2,0));
+    velocity(0,0) = msg.twist.twist.linear.x + 0.01 * randomGenerate();
+    velocity(1,0) = msg.twist.twist.linear.y + 0.01 * randomGenerate();
+    velocity(2,0) = msg.twist.twist.angular.z + 0.001 * randomGenerate();
+    // ROS_WARN("Velocity: X: [%f], Y: [%f], Yaw: [%f]", velocity(0,0), velocity(1,0), velocity(2,0));
 };
 
 //Callback function for the Position topic (SIMULATION)
@@ -180,7 +191,7 @@ void pose_callback(const gazebo_msgs::ModelStates& msg)
     measurement(1,0) = msg.pose[i].position.y;
     measurement(2,0) = tf::getYaw(msg.pose[i].orientation);
     set_rotational_matrix();
-    ROS_WARN("Measurements: X: [%f], Y: [%f], Yaw: [%f]", measurement(0,0), measurement(1,0), measurement(2,0));
+    // ROS_WARN("Measurements: X: [%f], Y: [%f], Yaw: [%f]", measurement(0,0), measurement(1,0), measurement(2,0));
 }
 
 visualization_msgs::MarkerArray build_rvizparticles() {
@@ -191,21 +202,22 @@ visualization_msgs::MarkerArray build_rvizparticles() {
         
        marker.header.frame_id = "base_link";
        marker.header.stamp = ros::Time();
-       // marker.ns = "my_namespace";
        marker.id = i;
-       marker.type = visualization_msgs::Marker::CUBE;
+       marker.type = visualization_msgs::Marker::ARROW;
        marker.action = visualization_msgs::Marker::ADD;
        marker.pose.position.x = estimates[i](0,0);
        marker.pose.position.y = estimates[i](1,0);
        marker.pose.position.z = 0;
+       marker.pose.orientation = tf::createQuaternionMsgFromYaw(estimates[i](2,0));
        // marker.pose.orientation.z = particle(2,0);
-       marker.scale.x = 0.1;
+       marker.scale.x = 0.3;
        marker.scale.y = 0.1;
        marker.scale.z = 0.1;
        marker.color.a = 1.0; // Don't forget to set the alpha!
        marker.color.r = 1.0;
        marker.color.g = 0.0;
        marker.color.b = 0.0;
+
        marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
 
        markers.markers[i] = marker;
@@ -218,15 +230,14 @@ visualization_msgs::Marker build_marker() {
     visualization_msgs::Marker marker;
        marker.header.frame_id = "base_link";
        marker.header.stamp = ros::Time();
-       // marker.ns = "my_namespace";
        marker.id = 0;
-       marker.type = visualization_msgs::Marker::CUBE;
+       marker.type = visualization_msgs::Marker::ARROW;
        marker.action = visualization_msgs::Marker::ADD;
        marker.pose.position.x = measurement(0,0);
        marker.pose.position.y = measurement(1,0);
        marker.pose.position.z = 0;
-       // marker.pose.orientation.z = measurement(2,0);
-       marker.scale.x = 0.1;
+       marker.pose.orientation = tf::createQuaternionMsgFromYaw(measurement(2,0));
+       marker.scale.x = 0.3;
        marker.scale.y = 0.1;
        marker.scale.z = 0.1;
        marker.color.a = 1.0; // Don't forget to set the alpha!
@@ -339,6 +350,8 @@ int main(int argc, char **argv)
         loop_rate.sleep(); //Maintain the loop rate
         ros::spinOnce();   //Check for new messages
 
+        velocity_publisher.publish(vel); // Publish the command velocity
+
         //Main loop code goes here:
         vel.linear.x = 0.1; // set linear speed
         vel.angular.z = 0.3; // set angular speed
@@ -347,7 +360,6 @@ int main(int argc, char **argv)
         cum_sum_weights();
         resample();        
 
-        velocity_publisher.publish(vel); // Publish the command velocity
         particles_publisher.publish(build_rvizparticles());
         vis_pub.publish(build_marker());
 
