@@ -5,12 +5,15 @@ project(turtlebot_example)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  gazebo_msgs
   geometry_msgs
+  nav_msgs
   roscpp
   rospy
   sensor_msgs
   std_msgs
   tf
+  visualization_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -51,7 +54,6 @@ find_package(catkin REQUIRED COMPONENTS
 #   FILES
 #   Message1.msg
 #   Message2.msg
-#   Message3.msg
 # )
 
 ## Generate services in the 'srv' folder
@@ -59,7 +61,6 @@ find_package(catkin REQUIRED COMPONENTS
 #   FILES
 #   Service1.srv
 #   Service2.srv
-#   Service3.srv
 # )
 
 ## Generate actions in the 'action' folder
@@ -67,13 +68,12 @@ find_package(catkin REQUIRED COMPONENTS
 #   FILES
 #   Action1.action
 #   Action2.action
-#   Action3.action
 # )
 
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   geometry_msgs#   sensor_msgs#   std_msgs
+#   gazebo_msgs#   geometry_msgs#   nav_msgs#   sensor_msgs#   std_msgs#   visualization_msgs
 # )
 
 ###################################
@@ -88,7 +88,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES turtlebot_example
-#  CATKIN_DEPENDS geometry_msgs roscpp rospy sensor_msgs std_msgs tf
+#  CATKIN_DEPENDS gazebo_msgs geometry_msgs nav_msgs roscpp rospy sensor_msgs std_msgs tf visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -101,7 +101,6 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  link_directories(/home/ambrose)
 )
 
 ## Declare a cpp library
@@ -110,25 +109,24 @@ include_directories(
 # )
 
 ## Declare a cpp executable
- add_executable(turtlebot_example_node src/turtlebot_example_node.cpp)
- add_executable(square_movement_node src/square_movement_node.cpp)
- add_executable(lab_2_node src/turtlebot_example_node_lab2.cpp)
+add_executable(turtlebot_example src/turtlebot_example.cpp)
+add_executable(sim_pose_publisher_node src/sim_pose_publisher.cpp)
+add_executable(vis_pose_publisher_node src/vis_pose_publisher.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(turtlebot_example_node turtlebot_example_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(turtlebot_example_node
+ target_link_libraries(vis_pose_publisher_node
    ${catkin_LIBRARIES}
  )
- target_link_libraries(square_movement_node
+ target_link_libraries(sim_pose_publisher_node
    ${catkin_LIBRARIES}
  )
- target_link_libraries(lab_2_node
+ target_link_libraries(turtlebot_example
    ${catkin_LIBRARIES}
  )
- 
 
 #############
 ## Install ##
