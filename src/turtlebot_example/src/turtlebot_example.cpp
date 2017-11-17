@@ -22,10 +22,11 @@ ros::Publisher marker_pub;
 
 #define PI 3.14159265
 #define TAGID 0
-#define numWayPoints 100
+#define NumWayPoints 100
+#define WayPointsInLine 10
 
 
-int pathId = 100000;
+int pathId = 5000000;
 
 enum WayPointType { generated, given, unoccupied, occupied};
 
@@ -37,9 +38,7 @@ class WayPoint
     double x, y;
     int childNodes [5];
     double cost;
-
 };
-
 
 std::vector<int> occupancyGrid;
 std::vector<WayPoint> waypoints;
@@ -79,11 +78,11 @@ visualization_msgs::Marker build_marker( double X, double Y, double Yaw) {
    return marker;
 }
 
-visualization_msgs::Marker build_waypoint_marker(WayPoint waypoint) {
+visualization_msgs::Marker build_waypoint_marker(WayPoint waypoint, int id) {
     visualization_msgs::Marker marker;
        marker.header.frame_id = "map";
        marker.header.stamp = ros::Time();
-       marker.id = waypoint.id;
+       marker.id = id;
        //pathId+=1;
        marker.type = visualization_msgs::Marker::SPHERE;
        marker.action = visualization_msgs::Marker::ADD;
@@ -101,14 +100,59 @@ visualization_msgs::Marker build_waypoint_marker(WayPoint waypoint) {
 
        switch(waypoint.type){
         case unoccupied: marker.color.b = 1.0;
-          ROS_INFO("free");
+          // ROS_INFO("free");
           break;
         case occupied: marker.color.r = 1.0;
-          ROS_INFO("occupied"); 
+          // ROS_INFO("occupied"); 
           break;
        }
       //only if using a MESH_RESOURCE marker type:
        ROS_INFO("Measurements: X: [%f], Y: [%f], Id: [%d]",waypoint.x , waypoint.y, waypoint.id);
+       marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
+   return marker;
+}
+
+visualization_msgs::Marker build_graph_lines(WayPoint waypoint) {
+    visualization_msgs::Marker marker;
+       marker.header.frame_id = "base_link";
+       marker.header.stamp = ros::Time();
+       marker.id = waypoint.id+10000;
+       //pathId+=1;
+       marker.type = visualization_msgs::Marker::LINE_LIST;
+       marker.action = visualization_msgs::Marker::ADD;
+       // marker.pose.position.x = waypoint.x;
+       // marker.pose.position.y = waypoint.y;
+       marker.pose.position.z = 0;
+       // marker.pose.orientation = tf::createQuaternionMsgFromYaw(0);
+       marker.scale.x = 0.01;
+       marker.color.a = 1.0; // Don't forget to set the alpha!
+       marker.color.r = 0.0;
+       marker.color.g = 1.0;
+       marker.color.b = 0.0;
+
+       geometry_msgs::Point origin;
+       origin.x = waypoint.x;
+       origin.y = waypoint.y;
+        ROS_WARN("Origin: X: [%f], Y: [%f], Id: [%d]",waypoint.x , waypoint.y, waypoint.id);
+       for(int i = 0; i < 5; i++) {
+         geometry_msgs::Point p;
+         p.x = waypoints[waypoint.childNodes[i]].x;
+         p.y = waypoints[waypoint.childNodes[i]].y;
+         p.z = 0; //not used
+         marker.points.push_back(p);
+         marker.points.push_back(origin);
+         ROS_INFO("nearest point: X: [%f], Y: [%f]",p.x , p.y);
+   }
+
+       // switch(waypoint.type){
+       //  case unoccupied: marker.color.b = 1.0;
+       //    ROS_INFO("free");
+       //    break;
+       //  case occupied: marker.color.r = 1.0;
+       //    ROS_INFO("occupied"); 
+       //    break;
+       // }
+      //only if using a MESH_RESOURCE marker type:
        marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
    return marker;
 }
@@ -177,25 +221,65 @@ double wayPointDistance(WayPoint A, WayPoint B)
 //   marker_pub.publish(build_marker(X, Y, Yaw));
 // }
 
-//Populating the open and closed sample set
+//generate interconnected graphs with waypoints
+void generateGraphFromWayPoints() 
+{
+  for (int i = 0; i < waypoints.size(); i++) {
+    ROS_WARN("working on waypoint %i", i);
+    std::vector<double> distances;
+    distances.push_back(1000);
+    distances.push_back(1001);
+    distances.push_back(1002);
+    distances.push_back(1003);
+    distances.push_back(1004);
+    std::vector<int> waypointIds;
+    waypointIds.push_back(1000);
+    waypointIds.push_back(1001);
+    waypointIds.push_back(1002);
+    waypointIds.push_back(1003);
+    waypointIds.push_back(1004);
+    for (int j = 0; j < waypoints.size(); j++) {
+        
+      if (i!=j) {
+        double distance = wayPointDistance(waypoints[i], waypoints[j]);
+        int k = 4;
+        while (distance < distances[k] && k >0) {
+          k--;
+        }
+        distances.insert(distances.begin()+k, distance);
+        distances.pop_back();
+
+        waypointIds.insert(waypointIds.begin()+k, waypoints[j].id);
+        waypointIds.pop_back();
+      }
+    }
+    for (int l = 0; l < waypointIds.size(); ++l)
+    {
+      waypoints[i].childNodes[l] = waypointIds[l];
+    }
+    marker_pub.publish(build_graph_lines(waypoints[i]));
+  }
+
+}
+
+//Populating the map with waypoints
 void createWayPoints()
 {
   int waypointId = 0;
-  for (int i = 0; i < numWayPoints; i++){
+  for (int i = 0; i < NumWayPoints; i++){
       WayPoint waypoint;
       waypoint.x = -0.9 + randomGenerate() * 9.8;
       waypoint.y = -4.9 + randomGenerate() * 9.8;
       waypoint.id = waypointId;
-      // ROS_INFO("waypoint X:[%f] Y:[%f] id:[%d]", waypoint.x, waypoint.y, waypoint.id);
-      waypointId++;
-      waypoints.push_back(waypoint);
       if (wayPointIsFree(waypoint)) {
         waypoint.type = unoccupied;
+        waypoints.push_back(waypoint);
+        waypointId++;
+        ROS_INFO("waypoint X:[%f] Y:[%f] id:[%d]", waypoint.x, waypoint.y, waypoint.id);
       } else {
         waypoint.type = occupied;
       }
-      
-      marker_pub.publish(build_waypoint_marker(waypoint));
+      marker_pub.publish(build_waypoint_marker(waypoint, i));
     }
   // ROS_INFO("done");
   mapCreated = true;
@@ -273,7 +357,7 @@ int main(int argc, char **argv)
     geometry_msgs::Twist vel;
 
     //Set the loop rate
-    ros::Rate loop_rate(20);    //20Hz update rate
+    ros::Rate loop_rate(5);    //20Hz update rate
 
     tf::TransformBroadcaster *br = new tf::TransformBroadcaster;
     tf::Transform *tform = new tf::Transform;
@@ -294,13 +378,12 @@ int main(int argc, char **argv)
           tf::StampedTransform(*tform, ros::Time::now(), "base_link", "map"));
       if (!mapCreated) {
         createWayPoints();
+        generateGraphFromWayPoints();
       } else {
-    
       //Main loop code goes here:
       vel.linear.x = 0.0; // set linear speed
       vel.angular.z = 0.3; // set angular speed
       // ROS_INFO("publishing speed");
-
       velocity_publisher.publish(vel); // Publish the command velocity
     }
   }
