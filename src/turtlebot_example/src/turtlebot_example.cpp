@@ -22,8 +22,8 @@ ros::Publisher marker_pub;
 
 #define PI 3.14159265
 #define TAGID 0
-#define NumWayPoints 200
-#define NumWayPointsInLine 10
+#define NumWayPoints 300
+#define NumWayPointsInLine 15
 #define NumConnectedNodes 5
 #define NumTravelPoints 2
 
@@ -151,7 +151,7 @@ visualization_msgs::Marker build_graph_lines(WayPoint waypoint) {
          p.z = 0; //not used
          marker.points.push_back(p);
          marker.points.push_back(origin);
-         ROS_INFO("nearest point: X: [%f], Y: [%f]",p.x , p.y);
+         ROS_INFO("nearest point: X: [%f], Y: [%f], id: [%i]",p.x , p.y, waypoints[waypoint.childNodes[i]].id);
    }
       //only if using a MESH_RESOURCE marker type:
        marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
@@ -268,7 +268,7 @@ bool pathIsFree(WayPoint A, WayPoint B) {
 }
 
 double wayPointDistance(WayPoint A, WayPoint B) {
-  return sqrt(pow((A.x - B.x), 2) + pow((A.y - B.y), 2));
+  return sqrt(pow((A.x - B.x), 2.0) + pow((A.y - B.y), 2.0));
 }
 
 //Populating the map with waypoints
@@ -293,15 +293,15 @@ void createWayPoints() {
 
 void addWayPointsToGraph() {
   WayPoint waypoint;
-  waypoint.x = currentX;
-  waypoint.y = currentY;
+  waypoint.x = 0;
+  waypoint.y = 0;
   waypoint.id = waypoints.size();
   waypoint.type = given;
   travelPoints.push_back(waypoint.id);
   waypoints.push_back(waypoint);
   marker_pub.publish(build_waypoint_marker(waypoint, waypoint.id));
-  waypoint.x = 2;
-  waypoint.y = -4;
+  waypoint.x = 7;
+  waypoint.y = 0;
   waypoint.id = waypoints.size();
   waypoint.type = given;
   travelPoints.push_back(waypoint.id);
@@ -323,7 +323,7 @@ void generateGraphFromWayPoints() {
     for (int j = 0; j < waypoints.size(); j++) {
         
       if (i!=j) {
-        double distance = wayPointDistance(waypoints[i], waypoints[j]);
+        double distance = wayPointDistance(waypoints[i], waypoints[ j]);
         if (distance < distances[NumConnectedNodes-1]) {
           int k = NumConnectedNodes-1;
           while (distance < distances[k-1] && k > 0) {
@@ -362,7 +362,8 @@ std::vector<WayPoint> findPathBetweenWayPoints(WayPoint A, WayPoint B) {
   A.previousNode = A.id;
   A.cost = 0;
   closedSet.push_back(A);
-  ROS_WARN("closed node id:[%d], cost:[%f]", A.id, A.cost);
+  // ROS_WARN("closed node id:[%d], cost:[%f]", A.id, A.cost);
+  // ROS_INFO("has child nodes [%d, %d, %d, %d, %d]", A.childNodes[0], A.childNodes[1], A.childNodes[2], A.childNodes[3], A.childNodes[4]);
   WayPoint temp;
   //Adding the initial node
   for (int i = 0; i < NumConnectedNodes; ++i)
@@ -370,14 +371,12 @@ std::vector<WayPoint> findPathBetweenWayPoints(WayPoint A, WayPoint B) {
     temp = waypoints[A.childNodes[i]];
     temp.previousNode = A.id;
     temp.cost = A.distances[i];
-    ROS_INFO("child node id:[%d], previousNode:[%d], cost:[%f]", temp.id, temp.previousNode, temp.cost);
     openSet.push_back(temp);
   }
-  // ROS_INFO("set up initial closed and open sets");
   //Continuing to add waypoints based on closed set
   while (openSet[0].id != B.id && openSet.size() > 0) {
-    ROS_WARN("closest open node id:[%d], cost:[%f]", openSet[0].id, openSet[0].cost);
-    ROS_INFO("has child nodes [%d, %d, %d, %d, %d]", openSet[0].childNodes[0], openSet[0].childNodes[1], openSet[0].childNodes[2], openSet[0].childNodes[3], openSet[0].childNodes[4]);
+    // ROS_WARN("closest open node id:[%d], cost:[%f]", openSet[0].id, openSet[0].cost);
+    // ROS_INFO("has child nodes [%d, %d, %d, %d, %d]", openSet[0].childNodes[0], openSet[0].childNodes[1], openSet[0].childNodes[2], openSet[0].childNodes[3], openSet[0].childNodes[4]);
     for (int i = 0; i < NumConnectedNodes; ++i) {
       bool skipChildNode = false;
       bool addToOpenSet = true;
@@ -398,46 +397,70 @@ std::vector<WayPoint> findPathBetweenWayPoints(WayPoint A, WayPoint B) {
           // ROS_INFO("openSet contains id:[%d]", openSet[j].id);
           if (temp.id == openSet[j].id) {
             if (temp.cost < openSet[j].cost) {
-              ROS_INFO("update node: [%i]", temp.id);
+              // ROS_INFO("update node: [%i]", temp.id);
+
               openSet.erase(openSet.begin()+j);
             } else {
-              addToOpenSet = false;
+              addToOpenSet = false; //if the node already exists in the openSet, but this path has a greater cost, do not add to the openSet.
             }
             break;
           }
         }
         if (addToOpenSet){
-          int k = openSet.size()-1;
-          while (temp.cost < openSet[k].cost && k > 0) {
-            k--;
+          bool hasNotBeenAdded = true;
+          //check to see if cost is lower than any other value within the openSet
+          for (int i = 0; i < openSet.size(); ++i) {
+            if (temp.cost < openSet[i].cost) {
+              openSet.insert(openSet.begin()+i, temp);
+              // ROS_INFO("added node:[%i] to open set with previousNode:[%i]", temp.id, temp.previousNode);
+              hasNotBeenAdded = false;
+              break;
             }
-          openSet.insert(openSet.begin()+k, temp);
-          ROS_INFO("added node:[%i] to open set", temp.id);
-
+          }
+          if (hasNotBeenAdded) {
+            openSet.push_back(temp);
+            // ROS_INFO("added node:[%i] to open set with previousNode:[%i]", temp.id, temp.previousNode);
+          }
         }
       }
     }
-    ROS_WARN("added node:[%d] to closed set", openSet[0].id);
+    // ROS_WARN("added node:[%d] to closed set with previousNode:[%i] and cost:[%f]", openSet[0].id, openSet[0].previousNode, openSet[0].cost);
     closedSet.push_back(openSet[0]);
     openSet.erase(openSet.begin());
   }
-    closedSet.push_back(openSet[0]);
-    ROS_INFO("done searching");
-    temp = closedSet.back();
-    ROS_INFO("path node id:[%d], previousNode:[%d], cost:[%f]", temp.id, temp.previousNode, temp.cost);
-    Path.insert(Path.begin(), temp);
-    while (temp.id != A.id) {
-      for (int i = 0; i < closedSet.size(); ++i) {
-        if (temp.previousNode == closedSet[i].id) {
-          temp = closedSet[i];
-          ROS_INFO("path node id:[%d], previousNode:[%d], cost:[%f]", temp.id, temp.previousNode, temp.cost);
-          Path.insert(Path.begin(), temp);
-          break;
-        }
+  if (openSet.size() > 0)
+  {
+      closedSet.push_back(openSet[0]);
+  }
+  // ROS_ERROR("travelling from node:[%d] to node:[%d]", A.id, B.id);
+  ROS_INFO("DISTANCE BETWEEN POINTS: [%f]", wayPointDistance(A, B));
+  for (int i = 0; i < closedSet.size(); ++i)
+  {
+    ROS_INFO("closedSet info: id:[%d], cost:[%f]", closedSet[i].id, closedSet[i].cost);
+    if (B.id == closedSet[i].id)
+    {
+      temp = closedSet[i];
+    }
+  }
+  if (temp.id != B.id) {
+    ROS_INFO("unable to find the path");
+    return Path;
+  }
+  ROS_INFO("path node id:[%d], previousNode:[%d], cost:[%f]", temp.id, temp.previousNode, temp.cost);
+  Path.insert(Path.begin(), temp);
+  while (temp.id != A.id) {
+    for (int i = 0; i < closedSet.size(); ++i) {
+      if (temp.previousNode == closedSet[i].id) {
+        temp = closedSet[i];
+        ROS_INFO("path node id:[%d], previousNode:[%d], cost:[%f]", temp.id, temp.previousNode, temp.cost);
+        Path.insert(Path.begin(), temp);
+        break;
       }
     }
-    marker_pub.publish(build_path_line(Path));
-    return Path;
+  }
+  ROS_INFO("DONE");
+  marker_pub.publish(build_path_line(Path));
+  return Path;
   }
 
 void findPaths() {
