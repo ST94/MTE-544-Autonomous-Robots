@@ -550,7 +550,7 @@ void pose_callback(const gazebo_msgs::ModelStates& msg) {
       }
     }
     else {
-      vel.linear.x = 0.2;
+      vel.linear.x = 0.1;
       vel.angular.z = 0;
       if (distance < 0.25) {
         currentWayPoint++;

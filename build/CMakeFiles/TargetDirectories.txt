@@ -74,6 +74,7 @@
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/roscpp_generate_messages_cpp.dir
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/install/strip.dir
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/nav_msgs_generate_messages_eus.dir
+/home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/turtlebot_live.dir
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/actionlib_generate_messages_cpp.dir
 /home/ambrose/catkin_ws/build/turtlebot_example/CMakeFiles/sensor_msgs_generate_messages_py.dir

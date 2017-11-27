@@ -901,6 +901,21 @@ nav_msgs_generate_messages_eus/fast:
 .PHONY : nav_msgs_generate_messages_eus/fast
 
 # Convenience name for target.
+turtlebot_example/CMakeFiles/turtlebot_live.dir/rule:
+	cd /home/ambrose/catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 turtlebot_example/CMakeFiles/turtlebot_live.dir/rule
+.PHONY : turtlebot_example/CMakeFiles/turtlebot_live.dir/rule
+
+# Convenience name for target.
+turtlebot_live: turtlebot_example/CMakeFiles/turtlebot_live.dir/rule
+
+.PHONY : turtlebot_live
+
+# fast build rule for target.
+turtlebot_live/fast:
+	cd /home/ambrose/catkin_ws/build && $(MAKE) -f turtlebot_example/CMakeFiles/turtlebot_live.dir/build.make turtlebot_example/CMakeFiles/turtlebot_live.dir/build
+.PHONY : turtlebot_live/fast
+
+# Convenience name for target.
 turtlebot_example/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/rule:
 	cd /home/ambrose/catkin_ws/build && $(MAKE) -f CMakeFiles/Makefile2 turtlebot_example/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/rule
 .PHONY : turtlebot_example/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir/rule
@@ -1314,6 +1329,33 @@ src/turtlebot_example.cpp.s:
 	cd /home/ambrose/catkin_ws/build && $(MAKE) -f turtlebot_example/CMakeFiles/turtlebot_example.dir/build.make turtlebot_example/CMakeFiles/turtlebot_example.dir/src/turtlebot_example.cpp.s
 .PHONY : src/turtlebot_example.cpp.s
 
+src/turtlebot_live.o: src/turtlebot_live.cpp.o
+
+.PHONY : src/turtlebot_live.o
+
+# target to build an object file
+src/turtlebot_live.cpp.o:
+	cd /home/ambrose/catkin_ws/build && $(MAKE) -f turtlebot_example/CMakeFiles/turtlebot_live.dir/build.make turtlebot_example/CMakeFiles/turtlebot_live.dir/src/turtlebot_live.cpp.o
+.PHONY : src/turtlebot_live.cpp.o
+
+src/turtlebot_live.i: src/turtlebot_live.cpp.i
+
+.PHONY : src/turtlebot_live.i
+
+# target to preprocess a source file
+src/turtlebot_live.cpp.i:
+	cd /home/ambrose/catkin_ws/build && $(MAKE) -f turtlebot_example/CMakeFiles/turtlebot_live.dir/build.make turtlebot_example/CMakeFiles/turtlebot_live.dir/src/turtlebot_live.cpp.i
+.PHONY : src/turtlebot_live.cpp.i
+
+src/turtlebot_live.s: src/turtlebot_live.cpp.s
+
+.PHONY : src/turtlebot_live.s
+
+# target to generate assembly for a file
+src/turtlebot_live.cpp.s:
+	cd /home/ambrose/catkin_ws/build && $(MAKE) -f turtlebot_example/CMakeFiles/turtlebot_live.dir/build.make turtlebot_example/CMakeFiles/turtlebot_live.dir/src/turtlebot_live.cpp.s
+.PHONY : src/turtlebot_live.cpp.s
+
 src/vis_pose_publisher.o: src/vis_pose_publisher.cpp.o
 
 .PHONY : src/vis_pose_publisher.o
@@ -1402,6 +1444,7 @@ help:
 	@echo "... roscpp_generate_messages_cpp"
 	@echo "... install/strip"
 	@echo "... nav_msgs_generate_messages_eus"
+	@echo "... turtlebot_live"
 	@echo "... rosgraph_msgs_generate_messages_cpp"
 	@echo "... actionlib_generate_messages_cpp"
 	@echo "... sensor_msgs_generate_messages_py"
@@ -1433,6 +1476,9 @@ help:
 	@echo "... src/turtlebot_example.o"
 	@echo "... src/turtlebot_example.i"
 	@echo "... src/turtlebot_example.s"
+	@echo "... src/turtlebot_live.o"
+	@echo "... src/turtlebot_live.i"
+	@echo "... src/turtlebot_live.s"
 	@echo "... src/vis_pose_publisher.o"
 	@echo "... src/vis_pose_publisher.i"
 	@echo "... src/vis_pose_publisher.s"
