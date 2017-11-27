@@ -25,7 +25,7 @@ ros::Publisher marker_pub;
 #define NumWayPoints 300
 #define NumWayPointsInLine 15
 #define NumConnectedNodes 5
-#define NumTravelPoints 2
+#define NumTravelPoints 4
 
 
 int pathId = 5000000;
@@ -90,7 +90,7 @@ visualization_msgs::Marker build_marker( double X, double Y, double Yaw) {
 
 visualization_msgs::Marker build_waypoint_marker(WayPoint waypoint, int id) {
     visualization_msgs::Marker marker;
-       marker.header.frame_id = "map";
+       marker.header.frame_id = "base_link";
        marker.header.stamp = ros::Time();
        marker.id = id;
        //pathId+=1;
@@ -162,7 +162,7 @@ visualization_msgs::Marker build_path_line(std::vector<WayPoint> path) {
   visualization_msgs::Marker marker;
        marker.header.frame_id = "base_link";
        marker.header.stamp = ros::Time();
-       marker.id = 20000;
+       marker.id = 20000 + path[0].id;
        marker.type = visualization_msgs::Marker::LINE_LIST;
        marker.action = visualization_msgs::Marker::ADD;
        marker.pose.position.z = 0;
@@ -273,8 +273,9 @@ double wayPointDistance(WayPoint A, WayPoint B) {
 
 //Populating the map with waypoints
 void createWayPoints() {
+  int i = 0;
   int waypointId = 0;
-  for (int i = 0; i < NumWayPoints; i++){
+  while (waypoints.size() < NumWayPoints) {
       WayPoint waypoint;
       waypoint.x = -0.9 + randomGenerate() * 9.8;
       waypoint.y = -4.9 + randomGenerate() * 9.8;
@@ -288,19 +289,34 @@ void createWayPoints() {
         waypoint.type = occupied;
       }
       marker_pub.publish(build_waypoint_marker(waypoint, i));
+      i++;
     }
 }
 
 void addWayPointsToGraph() {
   WayPoint waypoint;
-  waypoint.x = 0;
+  waypoint.x = currentX;
+  waypoint.y = currentY;
+  waypoint.id = waypoints.size();
+  waypoint.type = given;
+  travelPoints.push_back(waypoint.id);
+  waypoints.push_back(waypoint);
+  marker_pub.publish(build_waypoint_marker(waypoint, waypoint.id));
+  waypoint.x = 4;
   waypoint.y = 0;
   waypoint.id = waypoints.size();
   waypoint.type = given;
   travelPoints.push_back(waypoint.id);
   waypoints.push_back(waypoint);
   marker_pub.publish(build_waypoint_marker(waypoint, waypoint.id));
-  waypoint.x = 7;
+  waypoint.x = 8;
+  waypoint.y = -4;
+  waypoint.id = waypoints.size();
+  waypoint.type = given;
+  travelPoints.push_back(waypoint.id);
+  waypoints.push_back(waypoint);
+  marker_pub.publish(build_waypoint_marker(waypoint, waypoint.id));
+  waypoint.x = 8;
   waypoint.y = 0;
   waypoint.id = waypoints.size();
   waypoint.type = given;
@@ -464,7 +480,10 @@ std::vector<WayPoint> findPathBetweenWayPoints(WayPoint A, WayPoint B) {
   }
 
 void findPaths() {
-  findPathBetweenWayPoints(waypoints[travelPoints[0]], waypoints[travelPoints[1]]);
+  for (int i = 1; i < NumTravelPoints; ++i)
+  {
+    findPathBetweenWayPoints(waypoints[travelPoints[i-1]], waypoints[travelPoints[i]]);
+  }
   pathFound = true;
 }
 
@@ -534,7 +553,7 @@ int main(int argc, char **argv)
     tf::Transform *tform = new tf::Transform;
 
     tform->setOrigin(
-        tf::Vector3(0, 0, 0));
+        tf::Vector3(-1, -5, 0));
     tf::Quaternion q;
     q.setRPY(0, 0, 0);
 
