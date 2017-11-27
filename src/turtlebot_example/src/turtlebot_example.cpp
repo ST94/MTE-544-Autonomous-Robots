@@ -23,8 +23,8 @@ ros::Publisher marker_pub;
 #define PI 3.14159265
 #define TAGID 0
 #define NumWayPoints 300
-#define NumWayPointsInLine 15
-#define NumConnectedNodes 5
+#define NumWayPointsInLine 25
+#define NumConnectedNodes 8
 #define NumTravelPoints 4
 
 
@@ -38,12 +38,14 @@ class WayPoint
     int id;
     WayPointType type;
     double x, y;
-    int childNodes [5];
-    double distances [5];
+    std::vector<int> childNodes;
+    std::vector<double> distances;
     int previousNode;
     double cost;
 };
 
+geometry_msgs::Twist vel;
+std::vector<WayPoint> path;
 std::vector<int> occupancyGrid;
 std::vector<WayPoint> waypoints;
 std::vector<int> travelPoints;
@@ -55,6 +57,8 @@ double currentY;
 bool firstMapCallBack = true;
 bool graphCreated = false;
 bool pathFound = false;
+bool notYetAtDestination = true;
+int currentWayPoint = 0;
 
 //Drawing Marker Messages and Utility Functions
 double randomGenerate()
@@ -63,13 +67,12 @@ double randomGenerate()
   return random;
 }
 
-
 visualization_msgs::Marker build_marker( double X, double Y, double Yaw) {
     visualization_msgs::Marker marker;
        marker.header.frame_id = "base_link";
        marker.header.stamp = ros::Time();
        marker.id = pathId;
-       //pathId+=1;
+       // pathId+=1;
        marker.type = visualization_msgs::Marker::ARROW;
        marker.action = visualization_msgs::Marker::ADD;
        marker.pose.position.x = X;
@@ -92,7 +95,7 @@ visualization_msgs::Marker build_waypoint_marker(WayPoint waypoint, int id) {
     visualization_msgs::Marker marker;
        marker.header.frame_id = "base_link";
        marker.header.stamp = ros::Time();
-       marker.id = id;
+       marker.id = 500+id;
        //pathId+=1;
        marker.type = visualization_msgs::Marker::SPHERE;
        marker.action = visualization_msgs::Marker::ADD;
@@ -144,7 +147,8 @@ visualization_msgs::Marker build_graph_lines(WayPoint waypoint) {
        origin.x = waypoint.x;
        origin.y = waypoint.y;
         ROS_WARN("Origin: X: [%f], Y: [%f], Id: [%d]",waypoint.x , waypoint.y, waypoint.id);
-       for(int i = 0; i < NumConnectedNodes; i++) {
+       int numChildren = static_cast<int>(waypoint.childNodes.size());
+       for(int i = 0; i < numChildren; i++) {
          geometry_msgs::Point p;
          p.x = waypoints[waypoint.childNodes[i]].x;
          p.y = waypoints[waypoint.childNodes[i]].y;
@@ -182,46 +186,37 @@ visualization_msgs::Marker build_path_line(std::vector<WayPoint> path) {
          point2.z = 0; //not used
          marker.points.push_back(point1);
          marker.points.push_back(point2);
-   }
-      //only if using a MESH_RESOURCE marker type:
-       marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
-   return marker;
+  }
+  marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
+  return marker;
 }
 
-void drawCurve(int k) {
-   // Curves are drawn as a series of stright lines
-   // Simply sample your curves into a series of points
+visualization_msgs::Marker build_all_waypoints() {
+ visualization_msgs::Marker marker;
+     ROS_INFO("publishing all waypoints");
+     marker.header.frame_id = "base_link";
+       marker.header.stamp = ros::Time();
+       marker.id = 0;
+       marker.type = visualization_msgs::Marker::POINTS;
+       marker.action = visualization_msgs::Marker::ADD;
+       // marker.pose.orientation.z = particle(2,0);
+       marker.scale.x = 0.1;
+       marker.scale.y = 0.1;
+       marker.scale.z = 0.1;
+       marker.color.a = 1.0; // Don't forget to set the alpha!
+       marker.color.r = 0.0;
+       marker.color.g = 0.0;
+       marker.color.b = 1.0;
+       marker.mesh_resource = "package://pr2_description/meshes/base_v0/base.dae";
 
-   double x = 0;
-   double y = 0;
-   double steps = 50;
-
-   visualization_msgs::Marker lines;
-   lines.header.frame_id = "/map";
-   lines.id = k; //each curve must have a unique id or you will overwrite an old ones
-   lines.type = visualization_msgs::Marker::LINE_STRIP;
-   lines.action = visualization_msgs::Marker::ADD;
-   lines.ns = "curves";
-   lines.scale.x = 0.1;
-   lines.color.r = 1.0;
-   lines.color.b = 0.2*k;
-   lines.color.a = 1.0;
-
-   //generate curve points
-   for(int i = 0; i < steps; i++) {
-       geometry_msgs::Point p;
-       p.x = x;
-       p.y = y;
-       p.z = 0; //not used
-       lines.points.push_back(p); 
-
-       //curve model
-       x = x+0.1;
-       y = sin(0.1*i*k);   
-   }
-
-   //publish new curve
-   marker_pub.publish(lines);
+    for (int i = 0; i < waypoints.size(); i++) {
+       geometry_msgs::Point point;
+       point.x = waypoints[i].x;
+       point.y = waypoints[i].y;
+       marker.points.push_back(point);
+        //ROS_INFO("X: [%f], Y: [%f], Yaw: [%f]", particle(0,0), particle(1,0), particle(2,0));     
+    }
+   return marker;
 }
 
 bool wayPointIsFree(WayPoint waypoint) {
@@ -273,24 +268,26 @@ double wayPointDistance(WayPoint A, WayPoint B) {
 
 //Populating the map with waypoints
 void createWayPoints() {
+  ROS_INFO("creating all waypoints");
   int i = 0;
   int waypointId = 0;
   while (waypoints.size() < NumWayPoints) {
-      WayPoint waypoint;
-      waypoint.x = -0.9 + randomGenerate() * 9.8;
-      waypoint.y = -4.9 + randomGenerate() * 9.8;
-      waypoint.id = waypointId;
-      if (wayPointIsFree(waypoint)) {
-        waypoint.type = unoccupied;
-        waypoints.push_back(waypoint);
-        waypointId++;
-        ROS_INFO("waypoint X:[%f] Y:[%f] id:[%d]", waypoint.x, waypoint.y, waypoint.id);
-      } else {
-        waypoint.type = occupied;
-      }
+    WayPoint waypoint;
+    waypoint.x = -0.9 + randomGenerate() * 9.8;
+    waypoint.y = -4.9 + randomGenerate() * 9.8;
+    waypoint.id = waypointId;
+    if (wayPointIsFree(waypoint)) {
+      waypoint.type = unoccupied;
+      waypoints.push_back(waypoint);
+      waypointId++;
+    } else {
+      waypoint.type = occupied;
       marker_pub.publish(build_waypoint_marker(waypoint, i));
-      i++;
     }
+    i++;
+  }
+    marker_pub.publish(build_all_waypoints());
+    ROS_INFO("done creating all waypoints");
 }
 
 void addWayPointsToGraph() {
@@ -337,7 +334,6 @@ void generateGraphFromWayPoints() {
     }
 
     for (int j = 0; j < waypoints.size(); j++) {
-        
       if (i!=j) {
         double distance = wayPointDistance(waypoints[i], waypoints[ j]);
         if (distance < distances[NumConnectedNodes-1]) {
@@ -346,10 +342,8 @@ void generateGraphFromWayPoints() {
             k--;
           }
           if (pathIsFree(waypoints[i], waypoints[j])) {
-            // ROS_INFO("new distance : [%f], old distances:[%f, %f, %f, %f, %f] at position %i", distance, distances[0],distances[1],distances[2],distances[3],distances[4], k);
             distances.insert(distances.begin()+k, distance);
             distances.pop_back();
-
             waypointIds.insert(waypointIds.begin()+k, waypoints[j].id);
             waypointIds.pop_back();
           }
@@ -358,9 +352,12 @@ void generateGraphFromWayPoints() {
     }
     for (int l = 0; l < waypointIds.size(); ++l)
     {
-      waypoints[i].childNodes[l] = waypointIds[l];
-      waypoints[i].distances[l] = distances[l];
-      ROS_INFO("nearest point: X: [%f], Y: [%f], distance: [%f]", waypoints[waypointIds[l]].x , waypoints[waypointIds[l]].y, distances[l]);
+      if (waypointIds[l] != 1000)
+      {
+        waypoints[i].childNodes.push_back(waypointIds[l]);
+        waypoints[i].distances.push_back(distances[l]);
+        ROS_INFO("nearest point: X: [%f], Y: [%f], distance: [%f]", waypoints[waypointIds[l]].x , waypoints[waypointIds[l]].y, distances[l]);
+      }
     }
     marker_pub.publish(build_graph_lines(waypoints[i]));
   }
@@ -381,8 +378,8 @@ std::vector<WayPoint> findPathBetweenWayPoints(WayPoint A, WayPoint B) {
   // ROS_WARN("closed node id:[%d], cost:[%f]", A.id, A.cost);
   // ROS_INFO("has child nodes [%d, %d, %d, %d, %d]", A.childNodes[0], A.childNodes[1], A.childNodes[2], A.childNodes[3], A.childNodes[4]);
   WayPoint temp;
-  //Adding the initial node
-  for (int i = 0; i < NumConnectedNodes; ++i)
+  int children = static_cast<int>(A.childNodes.size());
+  for (int i = 0; i < children; ++i)
   {
     temp = waypoints[A.childNodes[i]];
     temp.previousNode = A.id;
@@ -393,7 +390,8 @@ std::vector<WayPoint> findPathBetweenWayPoints(WayPoint A, WayPoint B) {
   while (openSet[0].id != B.id && openSet.size() > 0) {
     // ROS_WARN("closest open node id:[%d], cost:[%f]", openSet[0].id, openSet[0].cost);
     // ROS_INFO("has child nodes [%d, %d, %d, %d, %d]", openSet[0].childNodes[0], openSet[0].childNodes[1], openSet[0].childNodes[2], openSet[0].childNodes[3], openSet[0].childNodes[4]);
-    for (int i = 0; i < NumConnectedNodes; ++i) {
+    int numChildren = static_cast<int>(openSet[0].childNodes.size());
+    for (int i = 0; i < numChildren; ++i) {
       bool skipChildNode = false;
       bool addToOpenSet = true;
       temp = waypoints[openSet[0].childNodes[i]];
@@ -406,7 +404,7 @@ std::vector<WayPoint> findPathBetweenWayPoints(WayPoint A, WayPoint B) {
         }
       }
       if (!skipChildNode) {
-        temp.cost = wayPointDistance(openSet[0], temp) + openSet[0].cost;
+        temp.cost = openSet[0].distances[i] + openSet[0].cost;
         temp.previousNode = openSet[0].id;
         // ROS_INFO("child node id:[%d], previousNode:[%d], cost:[%f]", temp.id, temp.previousNode, temp.cost);
         for (int j = 0; j < openSet.size(); ++j) {
@@ -414,7 +412,6 @@ std::vector<WayPoint> findPathBetweenWayPoints(WayPoint A, WayPoint B) {
           if (temp.id == openSet[j].id) {
             if (temp.cost < openSet[j].cost) {
               // ROS_INFO("update node: [%i]", temp.id);
-
               openSet.erase(openSet.begin()+j);
             } else {
               addToOpenSet = false; //if the node already exists in the openSet, but this path has a greater cost, do not add to the openSet.
@@ -452,7 +449,7 @@ std::vector<WayPoint> findPathBetweenWayPoints(WayPoint A, WayPoint B) {
   ROS_INFO("DISTANCE BETWEEN POINTS: [%f]", wayPointDistance(A, B));
   for (int i = 0; i < closedSet.size(); ++i)
   {
-    ROS_INFO("closedSet info: id:[%d], cost:[%f]", closedSet[i].id, closedSet[i].cost);
+    //ROS_INFO("closedSet info: id:[%d], cost:[%f]", closedSet[i].id, closedSet[i].cost);
     if (B.id == closedSet[i].id)
     {
       temp = closedSet[i];
@@ -475,15 +472,21 @@ std::vector<WayPoint> findPathBetweenWayPoints(WayPoint A, WayPoint B) {
     }
   }
   ROS_INFO("DONE");
-  marker_pub.publish(build_path_line(Path));
+  // marker_pub.publish(build_path_line(Path));
   return Path;
   }
 
 void findPaths() {
+  std::vector<WayPoint> tempPath;
   for (int i = 1; i < NumTravelPoints; ++i)
   {
-    findPathBetweenWayPoints(waypoints[travelPoints[i-1]], waypoints[travelPoints[i]]);
+    tempPath = findPathBetweenWayPoints(waypoints[travelPoints[i-1]], waypoints[travelPoints[i]]);
+    if (tempPath.size() != 0)
+    {
+      path.insert(path.end(), tempPath.begin(), tempPath.end());
+    }
   }
+  marker_pub.publish(build_path_line(path));
   pathFound = true;
 }
 
@@ -500,18 +503,50 @@ void map_callback(const nav_msgs::OccupancyGrid& msg) {
   }
 }
 
+double getRequiredYaw(WayPoint waypoint) {
+  return atan((waypoint.y - currentY)/(waypoint.x - currentX));
+}
+
 //Callback function for the Position topic (SIMULATION)
 void pose_callback(const gazebo_msgs::ModelStates& msg) {
-    int i;
-    for(i = 0; i < msg.name.size(); i++) {
-        if(msg.name[i] == "mobile_base") 
-        break;
+  int i;
+  for(i = 0; i < msg.name.size(); i++) {
+      if(msg.name[i] == "mobile_base") 
+      break;
+  }
+  currentX = msg.pose[i].position.x;
+  currentY = msg.pose[i].position.y;
+  double Yaw = tf::getYaw(msg.pose[i].orientation);
+  if (pathFound && notYetAtDestination) {
+    double requiredYaw = getRequiredYaw(path[currentWayPoint]);
+    double yawDifference = Yaw - requiredYaw;
+    // ROS_WARN("Current yaw: [%f], required yaw: [%f], yawDifference: [%f], velocity: [%f], currentWayPoint: [%d]", Yaw, requiredYaw, yawDifference, vel.angular.z, currentWayPoint);
+    double distance = sqrt(pow((currentX - path[currentWayPoint].x), 2.0) + pow((currentY - path[currentWayPoint].y), 2.0));
+    if (yawDifference >= -0.2 && yawDifference <= 0.2) {
+        vel.linear.x = 0;
+      if (yawDifference > 0) {
+        vel.angular.z = -0.3;
+      }
+      else {
+        vel.angular.z = 0.3;
+      }
     }
-    currentX = msg.pose[i].position.x;
-    currentY = msg.pose[i].position.y;
-    double Yaw = tf::getYaw(msg.pose[i].orientation);
-    // ROS_INFO("Measurements: X: [%f], Y: [%f], Yaw: [%f]",X, Y, Yaw);
-    marker_pub.publish(build_marker(currentX, currentY, Yaw));
+    else {
+      vel.linear.x = 0.3;
+      vel.angular.z = 0;
+      if (distance < 0.1) {
+        currentWayPoint++;
+        if (currentWayPoint == path.size()) {
+          notYetAtDestination = false;
+        }
+      }
+    }
+  }
+  else {
+    vel.linear.x = 0;
+    vel.angular.z = 0;
+  }
+  marker_pub.publish(build_marker(currentX, currentY, Yaw));
 }
 //Callback function for the Position topic (LIVE)
 
@@ -543,11 +578,11 @@ int main(int argc, char **argv)
     ros::Publisher velocity_publisher = n.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/teleop", 1);
     marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
     
-    //Velocity control variable
-    geometry_msgs::Twist vel;
-
     //Set the loop rate
     ros::Rate loop_rate(5);    //20Hz update rate
+
+    vel.linear.x = 0;
+    vel.angular.z = 0;
 
     tf::TransformBroadcaster *br = new tf::TransformBroadcaster;
     tf::Transform *tform = new tf::Transform;
@@ -574,11 +609,10 @@ int main(int argc, char **argv)
       if (!pathFound) {
         findPaths();
       }
-      //Main loop code goes here:
-      vel.linear.x = 0.0; // set linear speed
-      vel.angular.z = 0.3; // set angular speed
-      // ROS_INFO("publishing speed");
-      // velocity_publisher.publish(vel); // Publish the command velocity
+      else {
+        velocity_publisher.publish(vel);
+      }
+
   }
     return 0;
 }
