@@ -24,7 +24,7 @@ ros::Publisher marker_pub;
 #define TAGID 0
 #define NumWayPoints 300
 #define NumWayPointsInLine 25
-#define NumConnectedNodes 8
+#define NumConnectedNodes 12
 #define NumTravelPoints 4
 
 
@@ -342,7 +342,7 @@ void generateGraphFromWayPoints() {
           while (distance < distances[k-1] && k > 0) {
             k--;
           }
-          if (pathIsFree(waypoints[i], waypoints[j])) {
+          if ((distance < 2.5) && pathIsFree(waypoints[i], waypoints[j])) {
             distances.insert(distances.begin()+k, distance);
             distances.pop_back();
             waypointIds.insert(waypointIds.begin()+k, waypoints[j].id);

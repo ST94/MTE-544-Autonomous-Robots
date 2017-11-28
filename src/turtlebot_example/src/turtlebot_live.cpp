@@ -24,7 +24,7 @@ ros::Publisher marker_pub;
 #define TAGID 0
 #define NumWayPoints 300
 #define NumWayPointsInLine 25
-#define NumConnectedNodes 8
+#define NumConnectedNodes 12
 #define NumTravelPoints 4
 
 
@@ -221,28 +221,28 @@ visualization_msgs::Marker build_all_waypoints() {
 }
 
 bool wayPointIsFree(WayPoint waypoint) {
-  int xCeiling = ceil((waypoint.x + 0.9+0.2) * 10.0);
-  int xFloor = floor((waypoint.x + 0.9-0.2) * 10.0);
-  int yCeiling = ceil((waypoint.y + 4.9+0.2) * 10.0);
-  int yFloor = floor((waypoint.y + 4.9-0.2) * 10.0);
+  int xCeiling = ceil((waypoint.x + 0.2) * 10.0);
+  int xFloor = floor((waypoint.x - 0.2) * 10.0);
+  int yCeiling = ceil((waypoint.y + 0.2) * 10.0);
+  int yFloor = floor((waypoint.y - 0.2) * 10.0);
 
   //check the four squares closest to the waypoint
-  if (occupancyGrid[xFloor + yFloor * 100] > 75)
+  if (occupancyGrid[xFloor + yFloor * 70] > 75)
   {
     return false;
   }
 
-   if (occupancyGrid[xFloor + yCeiling * 100] > 75)
+   if (occupancyGrid[xFloor + yCeiling * 70] > 75)
   {
     return false;
   }
 
-    if (occupancyGrid[xCeiling + yFloor * 100] > 75)
+    if (occupancyGrid[xCeiling + yFloor * 70] > 75)
   {
     return false;
   }
 
-    if (occupancyGrid[xCeiling + yCeiling * 100] > 75)
+    if (occupancyGrid[xCeiling + yCeiling * 70] > 75)
   {
     return false;
   }
@@ -274,8 +274,8 @@ void createWayPoints() {
   int waypointId = 0;
   while (waypoints.size() < NumWayPoints) {
     WayPoint waypoint;
-    waypoint.x = -0.9 + randomGenerate() * 9.5;
-    waypoint.y = -4.9 + randomGenerate() * 9.5;
+    waypoint.x = 0.25 + randomGenerate() * 6.5;
+    waypoint.y = 0.25 + randomGenerate() * 6.5;
     waypoint.id = waypointId;
     if (wayPointIsFree(waypoint)) {
       waypoint.type = unoccupied;
@@ -293,29 +293,29 @@ void createWayPoints() {
 
 void addWayPointsToGraph() {
   WayPoint waypoint;
-  waypoint.x = currentX;
-  waypoint.y = currentY;
+  waypoint.x = 1.5;
+  waypoint.y = 0.5;
   waypoint.id = waypoints.size();
   waypoint.type = given;
   travelPoints.push_back(waypoint.id);
   waypoints.push_back(waypoint);
   marker_pub.publish(build_waypoint_marker(waypoint, waypoint.id));
-  waypoint.x = 4;
-  waypoint.y = 0;
+  waypoint.x = 4.5;
+  waypoint.y = 0.5;
   waypoint.id = waypoints.size();
   waypoint.type = given;
   travelPoints.push_back(waypoint.id);
   waypoints.push_back(waypoint);
   marker_pub.publish(build_waypoint_marker(waypoint, waypoint.id));
-  waypoint.x = 8;
-  waypoint.y = -4;
+  waypoint.x = 3;
+  waypoint.y = 3.75;
   waypoint.id = waypoints.size();
   waypoint.type = given;
   travelPoints.push_back(waypoint.id);
   waypoints.push_back(waypoint);
   marker_pub.publish(build_waypoint_marker(waypoint, waypoint.id));
-  waypoint.x = 8;
-  waypoint.y = 0;
+  waypoint.x = 1;
+  waypoint.y = 3;
   waypoint.id = waypoints.size();
   waypoint.type = given;
   travelPoints.push_back(waypoint.id);
@@ -342,7 +342,7 @@ void generateGraphFromWayPoints() {
           while (distance < distances[k-1] && k > 0) {
             k--;
           }
-          if (pathIsFree(waypoints[i], waypoints[j])) {
+          if ((distance < 2.0) && pathIsFree(waypoints[i], waypoints[j])) {
             distances.insert(distances.begin()+k, distance);
             distances.pop_back();
             waypointIds.insert(waypointIds.begin()+k, waypoints[j].id);
@@ -550,7 +550,7 @@ void pose_callback(const gazebo_msgs::ModelStates& msg) {
       }
     }
     else {
-      vel.linear.x = 0.1;
+      vel.linear.x = 0.2;
       vel.angular.z = 0;
       if (distance < 0.25) {
         currentWayPoint++;
@@ -607,7 +607,7 @@ int main(int argc, char **argv)
     tf::Transform *tform = new tf::Transform;
 
     tform->setOrigin(
-        tf::Vector3(-1, -5, 0));
+        tf::Vector3(0, 0, 0));
     tf::Quaternion q;
     q.setRPY(0, 0, 0);
 
@@ -624,12 +624,13 @@ int main(int argc, char **argv)
         createWayPoints();
         addWayPointsToGraph();
         generateGraphFromWayPoints();
+        graphCreated = true;
       } 
       if (!pathFound) {
         findPaths();
       }
       else {
-        velocity_publisher.publish(vel);
+        // velocity_publisher.publish(vel);
       }
 
   }
